@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Spam Detector | Smart Message Filter</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0 !important;
+            text-align: center;
+        }
+        
+        .card-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .card-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .message-input {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        
+        .result-card {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-spam {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .result-ham {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .result-loading {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #dee2e6;
+        }
+        
+        .prediction-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-text {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stats i {
+            color: #667eea;
+            margin-right: 8px;
+        }
+        
+        .example-buttons {
+            margin-top: 15px;
+        }
+        
+        .example-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 0.85rem;
+        }
+        
+        .model-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(102,126,234,0.1);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #667eea;
+            margin-top: 10px;
+        }
+        
+        textarea {
+            resize: none;
+        }
+        
+        @media (max-width: 768px) {
+            .card-header h1 {
+                font-size: 1.5rem;
+            }
+            .prediction-text {
+                font-size: 1.8rem;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                <h1>AI Spam Detector</h1>
+                <p>Powered by Machine Learning | 98.3% Accuracy</p>
+                <span class="model-badge">
+                    <i class="fas fa-brain"></i> Logistic Regression Model
+                </span>
+            </div>
+            
+            <div class="card-body">
+                <!-- Message Input -->
+                <label class="form-label fw-bold">
+                    <i class="fas fa-envelope"></i> Enter Your Message
+                </label>
+                <textarea 
+                    id="messageInput" 
+                    class="form-control message-input" 
+                    rows="4" 
+                    placeholder="Example: Congratulations! You've won a free iPhone! Click here to claim..."
+                ></textarea>
+                
+                <!-- Example Buttons -->
+                <div class="example-buttons text-center">
+                    <button class="example-btn" onclick="setExample('spam')">
+                        <i class="fas fa-exclamation-triangle"></i> Spam Example
+                    </button>
+                    <button class="example-btn" onclick="setExample('ham')">
+                        <i class="fas fa-check-circle"></i> Ham Example
+                    </button>
+                    <button class="example-btn" onclick="clearText()">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                </div>
+                
+                <!-- Predict Button -->
+                <div class="text-center mt-3">
+                    <button class="btn btn-predict text-white" onclick="predictSpam()">
+                        <i class="fas fa-robot"></i> Analyze Message
+                    </button>
+                </div>
+                
+                <!-- Result Section -->
+                <div id="resultSection" style="display: none;"></div>
+                
+                <!-- Stats Section -->
+                <div class="stats">
+                    <i class="fas fa-chart-line"></i>
+                    <strong>Model Stats:</strong> 
+                    Accuracy: 98.3% | 
+                    Precision: 0.98 | 
+                    Recall: 0.96
+                    <br>
+                    <i class="fas fa-database"></i>
+                    Trained on 5,574 SMS messages
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <i class="fas fa-lock"></i> Real-time Spam Detection | 
+            <i class="fas fa-code"></i> Flask + Scikit-learn |
+            <i class="fas fa-chart-simple"></i> TF-IDF Vectorizer
+        </div>
+    </div>
+    
+    <script>
+        // Example messages
+        const examples = {
+            spam: "Congratulations! You've won $1,000,000! Click here to claim your prize now! Hurry limited time offer!",
+            ham: "Hey, are we still meeting for coffee tomorrow at 3pm? Let me know if that works for you."
+        };
+        
+        function setExample(type) {
+            document.getElementById('messageInput').value = examples[type];
+            document.getElementById('messageInput').focus();
+        }
+        
+        function clearText() {
+            document.getElementById('messageInput').value = '';
+            document.getElementById('resultSection').style.display = 'none';
+        }
+        
+        async function predictSpam() {
+            const message = document.getElementById('messageInput').value.trim();
+            const resultSection = document.getElementById('resultSection');
+            
+            // Validation
+            if (!message) {
+                showAlert('Please enter a message to analyze!', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            resultSection.style.display = 'block';
+            resultSection.innerHTML = `
+                <div class="result-card result-loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <div class="prediction-text" style="font-size: 1.2rem; margin-top: 10px;">
+                        Analyzing message...
+                    </div>
+                    <div class="confidence-text">Please wait</div>
+                </div>
+            `;
+            
+            try {
+                // Call API
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API not responding. Make sure the server is running!');
+                }
+                
+                const data = await response.json();
+                const isSpam = data.prediction === 'SPAM';
+                const confidence = (data.confidence * 100).toFixed(1);
+                
+                // Display result with animation
+                resultSection.innerHTML = `
+                    <div class="result-card ${isSpam ? 'result-spam' : 'result-ham'}">
+                        <i class="fas ${isSpam ? 'fa-times-circle' : 'fa-check-circle'} fa-3x"></i>
+                        <div class="prediction-text">
+                            ${data.prediction}
+                        </div>
+                        <div class="confidence-text">
+                            <i class="fas fa-chart-simple"></i> Confidence: ${confidence}%
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidence}%"></div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.9rem;">
+                            <i class="fas fa-microchip"></i> Model: ${data.model || 'Logistic Regression'}
+                        </div>
+                    </div>
+                `;
+                
+                // Optional: Show success message
+                console.log('Prediction complete:', data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultSection.innerHTML = `
+                    <div class="result-card" style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        <div class="prediction-text" style="font-size: 1.2rem;">
+                            Connection Error
+                        </div>
+                        <div class="confidence-text">
+                            Make sure the API server is running!
+                            <br>
+                            <small>Run: python app.py</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function showAlert(message, type) {
+            // Simple alert for now
+            alert(message);
+        }
+        
+        // Allow Enter key to submit (Ctrl+Enter)
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                predictSpam();
+            }
+        });
+    </script>
+</body>
+</html>
